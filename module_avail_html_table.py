@@ -11,8 +11,8 @@ import time
 
 # MAKE THIS NEXT BLOCK OF CODE ACTIVE IF YOU WISH TO RUN IT ON THE ARC SYSTEM
 # WHERE THE MODULES ARE
-#host_name=(socket.gethostname())   
-#print(host_name) 
+#host_name=(socket.gethostname())
+#print(host_name)
 #host= (host_name.split('.'))[1].strip()
 
 
@@ -43,7 +43,7 @@ for file in f_urls:
 # =============================================================================
 # These descriptions are created by a script that uses the "module whatis"
 # command.
-# =============================================================================             
+# =============================================================================
 
 filename_desc = "./"+host+"/whatis_"+host+".txt"
 
@@ -67,16 +67,16 @@ with open(filename_desc) as f_in:
             desc = s1 + s2
             if app__name.strip() != last_app__name.strip():
                 arr=[app__name,desc]
-                descriptions.append(arr)            
+                descriptions.append(arr)
         last_app__name = app__name
 f_in.close()
 
 
 # =============================================================================
-# Creates an html table which is written into individual files for each category.   
+# Creates an html table which is written into individual files for each category.
 # =============================================================================
-   
-    
+
+
 lineStart = "<table class=\"table table-striped\" bgcolor=\"#E6E6FA\" style=\"border:1px solid black; border-collapse:collapse;\">\n"
 lineEnd = "</table>\n"
 lineTheadStart = " <thead>\n"
@@ -118,7 +118,7 @@ with open("./"+host+"/modules_"+host+".txt", 'r') as fin:
             t_body = False
             t_end = False
             n=line.count('/')
-		
+
             if n > 1:
                 category = re.sub(':$', '', (line.split('/'))[n].strip())
                 app = ""
@@ -127,32 +127,32 @@ with open("./"+host+"/modules_"+host+".txt", 'r') as fin:
                     t_end = True
 
             if n == 0:
-                app = line.strip() 
+                app = line.strip()
                 for d in descriptions:
                     if app == d[0]:
                         descrip = d[1]
                         break
 
                 version = ""
-                t_body = True               
+                t_body = True
             if n == 1:
                 app = (line.split('/'))[0].strip()
                 for d in descriptions:
                     if app == d[0]:
                         descrip = d[1]
                         break
-                
+
                 for a in app_urls:
                     if app == a[0]:
                         app = a[1]
                         break
-                    
+
                 version = (line.split('/'))[1].strip()
                 t_body = True
             if category != "architecture":
                 if t_end:
                     fout.write( nl+lineTbodyEnd )
-                    fout.write( lineEnd +nl+nl)       
+                    fout.write( lineEnd +nl+nl)
                     t_end = False
                 if t_title:
                     fout.write( "<h2>"+category.title()+"</h2>"+nl+nl)
@@ -162,7 +162,7 @@ with open("./"+host+"/modules_"+host+".txt", 'r') as fin:
                     fout.write( sp+sp+rowStart + headCellStart + "Module" + headCellEnd )
                     fout.write( nl+sp+sp+ headCellStart + "Version(s)" + headCellEnd )
                     fout.write( nl+sp+sp+ headCellStart + "Description" + headCellEnd)
-                    fout.write( nl+sp+sp+rowEnd+lineTheadEnd+nl+lineTbodyStart+nl)   
+                    fout.write( nl+sp+sp+rowEnd+lineTheadEnd+nl+lineTbodyStart+nl)
                     t_title = False
                 if t_body:
                     if last_app != app:
@@ -171,18 +171,14 @@ with open("./"+host+"/modules_"+host+".txt", 'r') as fin:
                         fout.write( sp+sp+rowStart + headCellStart + "" + headCellEnd )
                     fout.write( nl+sp+sp+bodyCellStart + version + bodyCellEnd )
                     if last_app != app:
-                        fout.write( nl+sp+sp+bodyCellStart + descrip + bodyCellEnd )                    
+                        fout.write( nl+sp+sp+bodyCellStart + descrip + bodyCellEnd )
                     else:
                         fout.write( nl+sp+sp+bodyCellStart + "" + bodyCellEnd )
                     fout.write( nl+sp+sp+rowEnd+nl )
                     t_body = False
                 r=r+1
                 last_app=app
-    
-    
+
+
         fout.write( nl+lineTbodyEnd )
-        fout.write( lineEnd +nl+nl)   
-
-       
-
- 
+        fout.write( lineEnd +nl+nl)
