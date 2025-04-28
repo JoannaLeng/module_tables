@@ -1,47 +1,35 @@
-Module Table Readme (#MTR)
+## Module Table Readme
 ============
 This project is designed to help with web documentation of Linux systems that use modules to allow users to access software. 
 
 It was started on 2/10/2017 as a github repository.
 
-Table of Contents (#TOC)
+## Table of Contents
 =================
 
-* [Module Table Readme Title](#module-table-readme)
-* [Table of Content](#TOC)
-* [Version](#version)
-      <a href="#about-the-project">About The Project</a>
-      <ul>
-        <li><a href="#built-with">Built With</a></li>
-      </ul>
-    </li>
-    <li>
-      <a href="#getting-started">Getting Started</a>
-      <ul>
-        <li><a href="#prerequisites">Prerequisites</a></li>
-        <li><a href="#installation">Installation</a></li>
-      </ul>
-    </li>
-    <li><a href="#usage">Usage</a></li>
-    <li><a href="#roadmap">Roadmap</a></li>
-    <li><a href="#contributing">Contributing</a></li>
-    <li><a href="#license">License</a></li>
-    <li><a href="#contact">Contact</a></li>
-    <li><a href="#acknowledgments">Acknowledgments</a></li>
-  </ol>
-</details>
+1. [Module Table Readme](#module-table-readme)
+2. [Table of Content](#table-of-content)
+3. [Version](#version)
+4. [Module Table Description](#module-table-description)
+5. [Copyright and License](#copyright-and-license)
+6. [DEVELOPMENT ENVIRONMENT](#development-environment)
 
 
-## VERSION (#V)
+
+
+## VERSION
+==========
 
 This is version 2.0
 
-## Module Table Description (#Description)
+## Module Table Description
+===========================
 This project is designed to help with web documentation of Linux systems that use modules to allow users to access software.
 
 It creates a web-formatted table of each module category or of all the modules categories in mark down language or in html that can be copied and pasted into a webpage. For cybersecurity reasons it is best not to integrate this into the webpage so it is a semi-automated process.
 
-## Copyright and License (#License)
+## Copyright and License
+========================
 Copyright (c) Feb 2018 by Dr Joanna Leng.
 
 Module Table is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -54,10 +42,12 @@ To help us, we ask that you cite the research papers on the package.
 
 https://github.com/JoannaLeng/module_tables/
 
-## DEVELOPED WITH: (#DevWith)
+## DEVELOPMENT ENVIRONMENT:
+==========================
 Version 2 was developed using Python 3.11 and Anaconda, miniforge, on a virtualized Ubuntu 24.04.2 system on a Windows 11 using WSL, Windows subsystem for Linux.
 
-# QUICK START: (#QuickStart)
+# QUICK START:
+===============
 Immediately below are a set of instructions that allow you to execute the module table software quickly. There are no explanations of the steps here. Please look at the rest of the README file if you have any problems.
 
 This software uses Anaconda, miniforge, with Python 3 so you will need to install and open an Anaconda shell. Once that is open, move to the top directory of cpt (the directory with the file README.md in it) and type the following the FIRST time you run the cpt software. Not all the instructions are required for later runs:
@@ -85,8 +75,9 @@ If you want to use them to write your own python scripts you can now import them
 
 `import mt`
 
-# CREATING MODULE INFO FILE: (#ModuleInfo)
-It is best practice not to run a webserver on an HPC service machine and pass information automatically between them as it can cause cybersecurity issues. The process is semi-automated.
+# CREATING MODULE INFO FILE:
+============================
+It is best practice not to run a webserver on an HPC service machine and pass information automatically between them as it can cause cybersecurity issues. This is why the process of creating these tables is semi-automated rather than fully -automated.
 
 Create a text file with information about the software modules using the command:
 
@@ -95,6 +86,7 @@ Create a text file with information about the software modules using the command
 Using the `$(hostname)` puts the name of the system in the filename and `(date +%Y_%m_%d-%H_%M)` the date and time in the filename. This makes it easier to manage the files and this information is used in the table caption, although the script will still execute and create tables without this information but the user will not know when the table was last updated. 
 
 # MANAGING THE Module Table ENVIRONMENT:
+=======================================
 The Anaconda environment, with all the necessary modules, can be set up using the *env_module_table.yml* file. 
 
 To see what conda environments you have, run the command
