@@ -7,9 +7,9 @@ It was started on 2/10/2017 as a github repository.
 Table of Contents (#TOC)
 =================
 
-* [Module Table Readme Title](#MTR)
+* [Module Table Readme Title](#module-table-readme)
 * [Table of Content](#TOC)
-* [Version](#V)
+* [Version](#version)
       <a href="#about-the-project">About The Project</a>
       <ul>
         <li><a href="#built-with">Built With</a></li>
@@ -90,7 +90,9 @@ It is best practice not to run a webserver on an HPC service machine and pass in
 
 Create a text file with information about the software modules using the command:
 
-`module whatis >> module_listing-$(date +%Y_%m_%d-%H_%M).txt`
+`module whatis >> module_listing-$(hostname)-$(date +%Y_%m_%d-%H_%M).txt`
+
+Using the `$(hostname)` puts the name of the system in the filename and `(date +%Y_%m_%d-%H_%M)` the date and time in the filename. This makes it easier to manage the files and this information is used in the table caption, although the script will still execute and create tables without this information but the user will not know when the table was last updated. 
 
 # MANAGING THE Module Table ENVIRONMENT:
 The Anaconda environment, with all the necessary modules, can be set up using the *env_module_table.yml* file. 
