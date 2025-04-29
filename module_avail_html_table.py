@@ -19,6 +19,7 @@ import socket
 import os
 import sys
 import argparse
+import validators
 
 def create_libraries_table_html(libraries_table, libraries):
     """
@@ -58,12 +59,13 @@ def create_libraries_table_html(libraries_table, libraries):
     caption_start = "\t<caption>\n"
     caption_end = "\t</caption>\n"
 
+    now = time.strftime("%c")
     caption = (
                 f"\t\t<b>Libary Modules on Aire Table:</b> "
-                f"This table of libraries was automatically created {time.strftime("%c")}.\n"
-    )
+                f"This table of libraries was automatically created {now}.\n"
+                )
 
-    #now = time.strftime("%c")
+
 
     #sp = ' '
     nl = '\n'
@@ -100,12 +102,18 @@ def create_libraries_table_html(libraries_table, libraries):
 
         for item in libraries:
             fout.write(row_start)
-            fout.write(body_cell_start + item["name"] + nl + body_cell_end)
-            fout.write(body_cell_start + item["version"] + nl + body_cell_end)
-            fout.write(body_cell_start + item["summary"] + nl + body_cell_end)
-            fout.write(body_cell_start + item["license"] + nl + body_cell_end)
-            fout.write(body_cell_start + item["URL"] + nl + body_cell_end)
-            fout.write(body_cell_start + item["path"] + nl + body_cell_end)
+            fout.write(body_cell_start + item['name'] + nl + body_cell_end)
+            fout.write(body_cell_start + item['version'] + nl + body_cell_end)
+            fout.write(body_cell_start + item['summary'] + nl + body_cell_end)
+            fout.write(body_cell_start + item['license'] + nl + body_cell_end)
+            url_string = item['URL']
+            print(validators.url(item['URL']))
+            #print("validators.url(item['URL']): {validators.url(item['URL'])}\n")
+            if validators.url(item['URL']):
+                print("here")
+                url_string = (f"<a href={url_string}>{url_string}</a>")
+            fout.write(body_cell_start + url_string + nl + body_cell_end)
+            fout.write(body_cell_start + item['path'] + nl + body_cell_end)
             fout.write(row_end)
 
         fout.write(table_body_end)
@@ -122,9 +130,10 @@ def create_libraries_table_md(libraries_table, libraries):
     Outputs:
         None
     """
+    now = time.strftime("%c")
     caption_text = (
                     f"**Libary Modules on Aire Table:** " \
-                    f"This table of libraries was automatically created {time.strftime("%c")}."
+                    f"This table of libraries was automatically created {now}."
     )
 
 
@@ -133,12 +142,12 @@ def create_libraries_table_md(libraries_table, libraries):
         f_out.write("|:--------:|:-----------:|:-----------:|:-----------:|:-------:|:--------:|\n")
         for item in libraries:
             f_out.write(
-                f"| {item["name"]} "
-                f"| {item["version"]} "
-                f"| {item["summary"]} "
-                f"| {item["license"]} "
-                f"| {item["URL"]} "
-                f"| {item["path"]} |\n"
+                f"| {item['name']} "
+                f"| {item['version']} "
+                f"| {item['summary']} "
+                f"| {item['license']} "
+                f"| {item['URL']} "
+                f"| {item['path']} |\n"
             )
         f_out.write(caption_text)
 
@@ -311,20 +320,20 @@ def main():
         for line in f_in:
             if libs:
                 print(line)
-                if 'Name:' in line and next_item["name"] == "":
-                    next_item["name"] = (line.split(': '))[1].strip()
+                if 'Name:' in line and next_item['name'] == "":
+                    next_item['name'] = (line.split(': '))[1].strip()
                 if 'Version:' in line:
-                    next_item["version"] = (line.split(': '))[1].strip()
-                if 'Summary:' in line and next_item["summary"] == "":
-                    next_item["summary"] = (line.split(': '))[1].strip()
-                if 'License:' in line and next_item["license"] == "":
-                    next_item["license"] = (line.split(': '))[1].strip()
-                if 'URL:' in line and next_item["URL"] == "":
-                    next_item["URL"] = (line.split(': '))[1].strip()
-                if 'Package path:' in line and next_item["path"] == "":
-                    next_item["path"] = (line.split(': '))[1].strip()
-                if "Title:" in line and next_item["title"] == "":
-                    next_item["title"] = (line.split(': '))[1].strip()
+                    next_item['version'] = (line.split(': '))[1].strip()
+                if 'Summary:' in line and next_item['summary'] == "":
+                    next_item['summary'] = (line.split(': '))[1].strip()
+                if 'License:' in line and next_item['license'] == "":
+                    next_item['license'] = (line.split(': '))[1].strip()
+                if 'URL:' in line and next_item['URL'] == "":
+                    next_item['URL'] = (line.split(': '))[1].strip()
+                if 'Package path:' in line and next_item['path'] == "":
+                    next_item['path'] = (line.split(': '))[1].strip()
+                if "Title:" in line and next_item['title'] == "":
+                    next_item['title'] = (line.split(': '))[1].strip()
                 if check_item(next_item) == 0:
                     print("next_item: %s " % (next_item))
                     print(f"line: {line} ")
