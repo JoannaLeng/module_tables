@@ -70,7 +70,7 @@ def create_libraries_table_html(libraries_table, libraries):
     #sp = ' '
     nl = '\n'
 
-    tables = change_file_extension(libraries_table, "html")
+    tables = change_file_extension_add_date(libraries_table, "html")
 
     with open(tables, 'w', encoding="utf-8") as fout:
         fout.write(table_start)
@@ -201,6 +201,30 @@ def parse_arguments():
                         help="Path for temporary files.")
     return parser.parse_args()
 
+
+
+def change_file_extension_add_date(file_path, new_extension):
+    """
+    Change file extension is needed to change the input .txt to output
+    .hmtl.
+    Inputs:
+        String      The path and filename with file extension as a string.
+        String      The new file extension (without the ".") as a string.
+    Outputs:
+        String      The original path and filename but with a new file
+                    extension as a string.
+    """
+    # Split the file path into root and extension
+    root, _ = os.path.splitext(file_path)
+    print(root)
+    now = time.strftime("%Y-%m-%d")
+    # Create the new file path with date in filename and the new extension
+    new_file_path = f"{root}-{now}.{new_extension}"
+    print(new_file_path)
+    # Rename the file
+    #os.rename(file_path, new_file_path)
+    return new_file_path
+
 def change_file_extension(file_path, new_extension):
     """
     Change file extension is needed to change the input .txt to output
@@ -215,13 +239,12 @@ def change_file_extension(file_path, new_extension):
     # Split the file path into root and extension
     root, _ = os.path.splitext(file_path)
     print(root)
-    # Create the new file path with the new extension
+    # Create the new file path with date in filename and the new extension
     new_file_path = f"{root}.{new_extension}"
     print(new_file_path)
     # Rename the file
     #os.rename(file_path, new_file_path)
     return new_file_path
-
 
 def main():
     """
