@@ -107,10 +107,9 @@ def create_libraries_table_html(libraries_table, libraries):
             fout.write(body_cell_start + item['summary'] + nl + body_cell_end)
             fout.write(body_cell_start + item['license'] + nl + body_cell_end)
             url_string = item['URL']
-            print(validators.url(item['URL']))
+            #print(validators.url(item['URL']))
             #print("validators.url(item['URL']): {validators.url(item['URL'])}\n")
             if validators.url(item['URL']):
-                print("here")
                 url_string = (f"<a href={url_string}>{url_string}</a>")
             fout.write(body_cell_start + url_string + nl + body_cell_end)
             fout.write(body_cell_start + item['path'] + nl + body_cell_end)
@@ -163,13 +162,58 @@ def check_item(item_dictionary):
                                  the item_dictionary
     """
     valid_score = 0
-    print(item_dictionary)
+    #print(item_dictionary)
     for key in item_dictionary:
         if item_dictionary[key] == "":
             valid_score = valid_score + 1
-
+    #print("valid_score: %s" % (valid_score))
     #print("valid_score: %s" % (valid_score))
     return valid_score
+
+def check_line_add_to_software_list(line, software_item, next_item, last_item, index, software_list):
+    """
+    Check to see if the line given at the command line is valid.
+    Inputs:
+        String          The path as a string
+    Outputs:
+        None
+    """
+    #print(line)
+    #print(item_dictionary)
+
+    if "Title:" in line:
+        # Title is the first item in the software item that first
+        # in the module whatis output. We need a reash software_item
+        # for the next item to be added to the list
+        next_item = software_item.copy()
+        next_item['title'] = (line.split(': '))[1].strip()
+    if 'Name:' in line:
+        next_item['name'] = (line.split(': '))[1].strip()
+    if 'Version:' in line:
+        next_item['version'] = (line.split(': '))[1].strip()
+    if 'Summary:' in line:
+        next_item['summary'] = (line.split(': '))[1].strip()
+    if 'License:' in line:
+        next_item['license'] = (line.split(': '))[1].strip()
+    if 'URL:' in line:
+        next_item['URL'] = (line.split(': '))[1].strip()
+    if 'Package path:' in line:
+        next_item['path'] = (line.split(': '))[1].strip()
+
+    if check_item(next_item) == 0:
+        #print("next_item: %s " % (next_item))
+        #print(f"line: {line} ")
+        if index > 0 and next_item != last_item:
+            software_list.append(next_item)
+            index = index + 1
+            last_item = next_item.copy()
+            next_item = software_item.copy()
+        elif index == 0:
+            software_list.append(next_item)
+            index = index + 1
+            last_item = next_item.copy()
+
+    return (index, next_item, last_item, software_list)
 
 
 def check_path(path_string):
@@ -309,9 +353,10 @@ def main():
 
     #filename_desc = "./"+host+"/whatis_"+host+".txt"
     #filename_desc = "/home/jo/code_projects/examples/"+host+"/whatis_"+host+".txt"
-    filename_desc = "/home/jo/code_projects/examples/module_tables/modules_example.txt"
+    #filename_desc = "/home/jo/code_projects/examples/module_tables/modules_example.txt"
+    filename_desc = "/home/jo/code_projects/examples/module_tables/modules-login2.aire.lee.alces.network-2025_04_30-09_58.txt"
     libraries_table = "/home/jo/code_projects/examples/module_tables/libraries_table.txt"
-    libraries_table1 = "/home/jo/code_projects/examples/module_tables/libraries_table1.html"
+    libraries_table1 = "/home/jo/code_projects/examples/module_tables/libraries__table1.html"
     print(f"filename_desc: {filename_desc} \n")
     print("\n\n")
 
@@ -339,24 +384,38 @@ def main():
         last_app__name="    "
         app__name="    "
         next_item = software_item.copy()
-        item = 0
+        last_item = software_item.copy()
+        index = 0
         for line in f_in:
             if libs:
-                print(line)
-                if 'Name:' in line and next_item['name'] == "":
+                (index,
+                 next_item,
+                 last_item,
+                 libraries) = check_line_add_to_software_list(line,
+                                                                software_item,
+                                                                next_item,
+                                                                last_item,
+                                                                index,
+                                                                libraries)
+                """if "Title:" in line:
+                    # Title is the first item in the software item that first
+                    # in the module whatis output. We need a reash software_item
+                    # for the next item to be added to the list
+                    next_item = software_item.copy()
+                    next_item['title'] = (line.split(': '))[1].strip()
+                if 'Name:' in line:
                     next_item['name'] = (line.split(': '))[1].strip()
                 if 'Version:' in line:
                     next_item['version'] = (line.split(': '))[1].strip()
-                if 'Summary:' in line and next_item['summary'] == "":
+                if 'Summary:' in line:
                     next_item['summary'] = (line.split(': '))[1].strip()
-                if 'License:' in line and next_item['license'] == "":
+                if 'License:' in line:
                     next_item['license'] = (line.split(': '))[1].strip()
-                if 'URL:' in line and next_item['URL'] == "":
+                if 'URL:' in line:
                     next_item['URL'] = (line.split(': '))[1].strip()
-                if 'Package path:' in line and next_item['path'] == "":
+                if 'Package path:' in line:
                     next_item['path'] = (line.split(': '))[1].strip()
-                if "Title:" in line and next_item['title'] == "":
-                    next_item['title'] = (line.split(': '))[1].strip()
+
                 if check_item(next_item) == 0:
                     print("next_item: %s " % (next_item))
                     print(f"line: {line} ")
@@ -368,7 +427,7 @@ def main():
                     elif item == 0:
                         libraries.append(next_item)
                         item = item + 1
-                        last_item = next_item.copy()
+                        last_item = next_item.copy()"""
             if '--- /opt/apps/etc/modulefiles/libraries' in line:
                 print("started libaries")
                 libs = True
