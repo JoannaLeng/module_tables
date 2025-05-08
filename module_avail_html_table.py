@@ -20,7 +20,7 @@ import sys
 import argparse
 import validators
 
-def create_category_table_html(path_out, catergory_software_list, category_name):
+def create_category_table_html(path_out, catergory_software_list, category_name, log_file):
     """
     create a text file with a html table of the software in the catergory_software_list.
     Inputs:
@@ -28,6 +28,7 @@ def create_category_table_html(path_out, catergory_software_list, category_name)
         catergory_software_list  The list of software in the named category
                                  as a list of dictionaries
         category_name            The name of the category as a string
+        log_file                 The log file as a file object
     Outputs:
         None
     """
@@ -61,6 +62,7 @@ def create_category_table_html(path_out, catergory_software_list, category_name)
     caption_end = "\t</caption>\n"
 
     now = time.strftime("%c")
+    category_name = category_name.replace(category_name[0], category_name[0].upper(), 1)
     caption = (
                 f"\t\t<b>{category_name} Modules on Aire Table:</b> "
                 f"This table of {category_name} was automatically created {now}.\n"
@@ -72,6 +74,9 @@ def create_category_table_html(path_out, catergory_software_list, category_name)
     nl = '\n'
 
     tables = change_file_extension_add_date(path_out, "html")
+
+    print(f"\n\nCreating table file for {category_name} in {tables}\n")
+    log_file.write(f"\n\nCreating table file for {category_name} in {tables}\n")
 
     with open(tables, 'w', encoding="utf-8") as fout:
         fout.write(table_start)
@@ -112,6 +117,9 @@ def create_category_table_html(path_out, catergory_software_list, category_name)
             #print("validators.url(item['URL']): {validators.url(item['URL'])}\n")
             if validators.url(item['URL']):
                 url_string = (f"<a href={url_string}>{url_string}</a>")
+            else:
+                log_file.write(f"WARNING: the software with title: {item['title']}"
+                               f" the URL: {item['URL']} is not a valid URL\n")
             fout.write(body_cell_start + url_string + nl + body_cell_end)
             fout.write(body_cell_start + item['path'] + nl + body_cell_end)
             fout.write(row_end)
@@ -153,38 +161,7 @@ def create_libraries_table_md(libraries_table, libraries):
         f_out.write(caption_text)
 
 
-def check_item(item_dictionary, strength):
-    """
-    Check to see if all the item_dictionary values which are items of the
-    software module list are full and valid.
-    Inputs:
-        item_dictionary          The software item as a dictionary
-        strength                 The strength of the checking test as an int
-                                 0 is for a basic check of the item
-                                 1 is for a full check of the item
-    Outputs:
-        int                      The number of items that are not valid in
-                                 the item_dictionary, 0 is a valid score
-    """
-    valid_score = 0
-    best_score = len(item_dictionary)
-    #print(item_dictionary)
-    #library item tend to have all the values set so use strength 1
-    if strength == 1:
-        for key in item_dictionary:
-            if item_dictionary[key] == "":
-                valid_score = valid_score + 1
-    # tools tend to have just title and summary set so use strength 0
-    if strength == 0:
-        for key in item_dictionary:
-            if key != "title" and key != "summary":
-                if item_dictionary[key] == "":
-                    valid_score = valid_score + 1
-    #print("valid_score: %s" % (valid_score))
-    print("valid_score: %s" % (valid_score))
-    return valid_score
-
-def check_item_at_item_end(software_item):
+def check_item_at_item_end(software_item, log_file):
     """
     Check to see which of the values in the software_item dictionary are set and valid.
     Inputs:
@@ -200,15 +177,22 @@ def check_item_at_item_end(software_item):
     for key in software_item:
         if key == "title":
             if software_item[key] == "":
-                note_start = "title is not set!,"
-            elif software_item[key] != "":
+                note_start = "Title is not set!, "
+            else:
                 note_start = (f"Title: {software_item[key]}, ")
         if software_item[key] == "":
             valid_score = valid_score + 1
             note_details = (note_details+f" {key} is not set,")
-    #print("valid_score: %s" % (valid_score))
-    log_notes = (note_start+f"score: {valid_score}, "+note_details)
-    print(f"log_notes: {log_notes}")
+
+    if note_details.endswith(','):
+        note_details = note_details[:-1]
+
+    log_notes = (note_start+f"score: {valid_score}\n  "+note_details+"\n")
+    log_file.write(log_notes)
+    if valid_score > 0:
+        print(f"\nWARNING: {software_item['title']} is not set fully")
+        print(note_details)
+    #print(f"log_notes: {log_notes}")
     return log_notes
 
 
@@ -217,7 +201,8 @@ def check_line_add_to_software_list(line,
                                     next_item,
                                     last_item,
                                     index,
-                                    software_list):
+                                    software_list,
+                                    log_file):
     """
     Check to see if the line given at the command line is valid.
     Inputs:
@@ -227,23 +212,17 @@ def check_line_add_to_software_list(line,
         last_item       The last software item as a dictionary
         index           The index of the software item in the list
         software_list   The list of software items as a list of dictionaries
-        strength        The strength of the checking test as an int
-                         0 is for a basic check of the item
-                         1 is for a full check of the item
+        log_file        The log file as a file object
     Outputs:
         index           Updated index of the software item in the list
         next_item       Updated next software item as a dictionary
         last_item       Updated last and last software items as dictionaries
         software_list   Updated list of software items as a list of dictionaries
     """
-    #print(f"1, line: {line}\n")
-    #print(f"2, last_item: {last_item}\n")
-    #print(f"3, next_item: {next_item}\n")
-    #print(f"4, index: {index}\n")
 
     if "Title:" in line:
         # Title is the first item in the software item that first
-        # in the module whatis output. We need a reash software_item
+        # in the module whatis output. We need a read software_item
         # for the next item to be added to the list
         next_item = software_item.copy()
         next_item['title'] = (line.split(': '))[1].strip()
@@ -261,9 +240,8 @@ def check_line_add_to_software_list(line,
         next_item['path'] = (line.split(': '))[1].strip()
 
     if 'module help' in line:
-        check_item_at_item_end(next_item)
-        #print("item checked: next_item: {next_item} ")
-        #print(f"line: {line} ")
+        check_item_at_item_end(next_item, log_file)
+
         if index > 0 and next_item != last_item:
             software_list.append(next_item)
             index = index + 1
@@ -273,12 +251,6 @@ def check_line_add_to_software_list(line,
             software_list.append(next_item)
             index = index + 1
             last_item = next_item.copy()
-
-    #print(f"4, last_item: {last_item}\n")
-    #print(f"5, next_item: {next_item}\n")
-    #print(f"6, index: {index}\n")
-    #print(f"7, software_list: {software_list}\n")
-
 
     return (index, next_item, last_item, software_list)
 
@@ -312,11 +284,11 @@ def change_file_extension_add_date(file_path, new_extension):
     """
     # Split the file path into root and extension
     root, _ = os.path.splitext(file_path)
-    print(root)
+    #print(root)
     now = time.strftime("%Y-%m-%d")
     # Create the new file path with date in filename and the new extension
     new_file_path = f"{root}-{now}.{new_extension}"
-    print(new_file_path)
+    #print(new_file_path)
     # Rename the file
     #os.rename(file_path, new_file_path)
     return new_file_path
@@ -341,6 +313,52 @@ def change_file_extension(file_path, new_extension):
     # Rename the file
     #os.rename(file_path, new_file_path)
     return new_file_path
+
+def format_1_controller(software_list, file_in, file_out, category_name, log_file):
+    """
+    This function controls the format 1 optoion which is to create a
+    html table for each category of software.
+    Inputs:
+        software_list       The list of software items as a list of dictionaries
+        file_in             The input file as a string
+        file_out            The output file as a string
+        category_name       The name of the category as a string
+    Outputs:
+        None
+    """
+
+    print("\n\n"+category_name.upper()+"\n")
+
+    if len(software_list) > 0:
+        print(f"len(software_list): {len(software_list)}\n")
+        software_list_out = file_out+r"_"+category_name
+        for index, item in enumerate(software_list):
+           print(f"{index} {item} \n")
+        #print(f"\nsoftware_list_out: {software_list_out}")
+        create_category_table_html(software_list_out, software_list, category_name, log_file)
+    elif len(software_list) == 0:
+        print(f"len(software_list): {len(software_list)}")
+        print(f"No {category_name} found in {file_in}\n")
+
+    return None
+
+def start_log_file(log_file):
+    """
+    Start the log file with the date and time.
+    Inputs:
+        log_file       The path and filename as a string
+    Outputs:
+        log_file       The log file with the date and time as a string
+    """
+    now = time.strftime("%c")
+    host = os.uname()[1]
+    log_file.write(f"\nLog file for module_tables created on {now} on {host}\n\n")
+    log_file.write("This log gives information on the resulting tables.\n")
+    log_file.write("A score of 0 for a software item means the 5 elements of the table "
+                   "were set in modules. An integer value of 1 is added to zero for each "
+                   "missing element")
+    return log_file
+
 
 def parse_arguments():
     """
@@ -433,47 +451,23 @@ def main():
 
     print("\n\n")
 
-    """
-    if args.LES_path_out is not None:
-        path_out=args.LES_path_out+r"//"+resultsdir
-    if args.LES_path_out is None:
-        path_out=path_in+r"//"+resultsdir
-    os.makedirs(path_out)
-
-    path_out = check_path(args.path_out)
-
-    if args.file_in is None:
-    if os.path.split(args.geom_file_name)[0] == '':
-        sys.exit("ERROR; There is no geometry file provided")
-    elif os.path.split(args.geom_file_name)[0] != '':
-        geom_files_dir=os.path.split(args.geom_file_name)[0]
-    """
-
-
     # =============================================================================
-    # The descriptions in the input file are created by a script that uses the
-    # "module whatis" command.
+    # File handling admin - setting paths, names etc.
     # =============================================================================
 
-    #filename_desc = "./"+host+"/whatis_"+host+".txt"
-    #filename_desc = "/home/jo/code_projects/examples/"+host+"/whatis_"+host+".txt"
-    #filename_desc = "/home/jo/code_projects/examples/module_tables/modules_example.txt"
+    log_file_filename = (os.path.abspath(path_out)+r"/modules_table_log-"+time.strftime("%Y-%m-%d")+r"log.txt")
+
+    log_file = open(log_file_filename, 'w', encoding="utf-8")
+    start_log_file(log_file)
 
     file_in = os.path.abspath(file_in)
-    print(f"file_in: {file_in} \n")
-
-    #results_file_name = "module_table"
-    #change_file_extension_add_date(libraries_table, "html")
+    log_file.write(f"\n\nfile_in: {file_in} \n")
 
     file_out = os.path.abspath(path_out)+r"/modules_table"
+    log_file.write(f"file_out: {file_out} \n")
 
+    log_file.write(f"format: {format} \n")
 
-    #filename_in = "/home/jo/code_projects/examples/module_tables/modules-login2.aire.lee.alces.network-2025_04_30-09_58.txt"
-    filename_in = file_in
-    libraries_table = "/home/jo/code_projects/examples/module_tables/libraries_table.txt"
-    libraries_table1 = "/home/jo/code_projects/examples/module_tables/libraries__table1.html"
-    print(f"filename_in: {filename_in} \n")
-    print("\n\n")
 
 
     #f_loc = r"/home/jo/code_projects/examples/"+host+".txt"
@@ -481,9 +475,16 @@ def main():
     #    open(f_loc, 'w').close()
 
 
-    #compilers = []
+    # =============================================================================
+    # The descriptions in the input file are created by a script that uses the
+    # "module whatis" command.
+    # =============================================================================
+
+    compilers = []
     libraries = []
     tools = []
+    interpreters = []
+    applications = []
     software_item = {"title": "",
                      "name": "",
                      "version": "",
@@ -493,32 +494,29 @@ def main():
                      "path": ""}
     compilers_flag = bool(False)
     libraries_flag = bool(False)
-    tools_flag = False
-    interpreters_flag = False
-    applications_flag = False
-    #libs = bool(False)
-    #tools = []
-    #interpreters = []
-    #applications = []
+    tools_flag = bool(False)
+    interpreters_flag = bool(False)
+    applications_flag = bool(False)
 
-    with open(filename_in, encoding="utf-8") as f_in:
-        last_app__name="    "
-        app__name="    "
+    index_libraries = 0
+    index_tools = 0
+    index_interpreters = 0
+    index_applications = 0
+    index = 0
+
+
+
+    with open(file_in, encoding="utf-8") as f_in:
         next_item = software_item.copy()
         last_item = software_item.copy()
-        index_libraries = 0
-        index_tools = 0
-        index = 0
-        #next_tools_item = software_item.copy()
-        #last_tools_item = software_item.copy()
-        #first_time = False
         for line in f_in:
             #print(f"{index}: libraries_flag: {libraries_flag}  tools_flag: {tools_flag}  "
             #       f"compilers_flag: {compilers_flag}  interpreters_flag: {interpreters_flag}  "
             #       f"applications_flag: {applications_flag}")
             index = index+1
             if '--- /opt/apps/etc/modulefiles/compilers' in line:
-                print("started reading compilers")
+                print("\n\nREADING COMPILERS:\n")
+                log_file.write("\nReading compilers:\n")
                 compilers_flag = True
                 libraries_flag = False
                 tools_flag = False
@@ -527,7 +525,8 @@ def main():
                 next_item = software_item.copy()
                 last_item = software_item.copy()
             if '--- /opt/apps/etc/modulefiles/libraries' in line:
-                print("started reading libaries")
+                print("\n\nREADING LIBRARIES\n")
+                log_file.write("\nReading libraries:\n")
                 libraries_flag = True
                 compilers_flag = False
                 tools_flag = False
@@ -536,7 +535,8 @@ def main():
                 next_item = software_item.copy()
                 last_item = software_item.copy()
             if '--- /opt/apps/etc/modulefiles/tools' in line:
-                print("started reading tools")
+                print("\n\nREADING TOOLS\n")
+                log_file.write("\nReading tools:\n")
                 tools_flag = True
                 compilers_flag = False
                 libraries_flag = False
@@ -545,7 +545,8 @@ def main():
                 next_item = software_item.copy()
                 last_item = software_item.copy()
             if '--- /opt/apps/etc/modulefiles/interpreters' in line:
-                print("started reading interpreters")
+                print("\n\nREADING INTERPRETERS\n")
+                log_file.write("\nReading interpreters:\n")
                 interpreters_flag = True
                 compilers_flag = False
                 libraries_flag = False
@@ -554,7 +555,8 @@ def main():
                 next_item = software_item.copy()
                 last_item = software_item.copy()
             if '--- /opt/apps/etc/modulefiles/applications' in line:
-                print("started reading applications")
+                print("\n\nREADING APPLICATIONS\n")
+                log_file.write("\nReading applications:\n")
                 applications_flag = True
                 compilers_flag = False
                 libraries_flag = False
@@ -571,10 +573,9 @@ def main():
                                                                 next_item,
                                                                 last_item,
                                                                 index_libraries,
-                                                                libraries)
-            if tools_flag and not libraries_flag and not compilers_flag and not interpreters_flag and not applications_flag:
-                #print(f"tools_flag: {tools_flag} in tools")
-                #print(line)
+                                                                libraries,
+                                                                log_file)
+            if tools_flag:
                 (index_tools,
                  next_item,
                  last_item,
@@ -583,71 +584,40 @@ def main():
                                                             next_item,
                                                             last_item,
                                                             index_tools,
-                                                            tools)
-
-            if '--- /opt/apps/etc/modulefiles/compilers' in line:
-                print("started reading compilers")
-                compilers_flag = True
-                libraries_flag = False
-                tools_flag = False
-                interpreters_flag = False
-                applications_flag = False
-            if '--- /opt/apps/etc/modulefiles/libraries' in line:
-                print("started reading libaries")
-                libraries_flag = True
-                compilers_flag = False
-                tools_flag = False
-                interpreters_flag = False
-                applications_flag = False
-            if '--- /opt/apps/etc/modulefiles/tools' in line:
-                print("started reading tools")
-                tools_flag = True
-                compilers_flag = False
-                libraries_flag = False
-                interpreters_flag = False
-                applications_flag = False
-            if '--- /opt/apps/etc/modulefiles/interpreters' in line:
-                print("started reading interpreters")
-                interpreters_flag = True
-                compilers_flag = False
-                libraries_flag = False
-                tools_flag = False
-                applications_flag = False
-            if '--- /opt/apps/etc/modulefiles/applications' in line:
-                print("started reading applications")
-                applications_flag = True
-                compilers_flag = False
-                libraries_flag = False
-                tools_flag = False
-                interpreters_flag = False
+                                                            tools,
+                                                            log_file)
+            if interpreters_flag:
+                (index_interpreters,
+                 next_item,
+                 last_item,
+                 interpreters) = check_line_add_to_software_list(line,
+                                                            software_item,
+                                                            next_item,
+                                                            last_item,
+                                                            index_interpreters,
+                                                            interpreters,
+                                                            log_file)
+            if applications_flag:
+                (index_applications,
+                 next_item,
+                 last_item,
+                 applications) = check_line_add_to_software_list(line,
+                                                            software_item,
+                                                            next_item,
+                                                            last_item,
+                                                            index_applications,
+                                                            applications,
+                                                            log_file)
         f_in.close()
 
-    print("\n\nLIBRARIES\n\n")
-
-    for index, item in enumerate(tools):
-        print(f"{index} {item} \n")
-
-    print(f"len(tools): {len(tools)}\n")
 
     if format == 1:
         print("format 1")
-        if len(libraries) > 0:
-            print(f"len(libraries): {len(libraries)}")
-            libraries_out = file_out+r"_libraries"
-            print(f"libraries_out: {libraries_out}")
-            create_category_table_html(libraries_out, libraries, "Libraries")
-        elif len(libraries) == 0:
-            print(f"len(libraries): {len(libraries)}")
-            print(f"No libraries found in {filename_in}")
+        format_1_controller(libraries, file_in, file_out, "libraries", log_file)
+        format_1_controller(tools, file_in, file_out, "tools", log_file)
+        format_1_controller(interpreters, file_in, file_out, "interpreters", log_file)
+        format_1_controller(applications, file_in, file_out, "applications", log_file)
 
-        if len(tools) > 0:
-            print(f"len(tools): {len(tools)}")
-            tools_out = file_out+r"_tools"
-            print(f"tools_out: {tools_out}")
-            create_category_table_html(tools_out, tools, "Tools")
-        elif len(libraries) == 0:
-            print(f"len(tools): {len(tools)}")
-            print(f"No tools found in {filename_in}")
     elif format == 2:
         print("format 2")
         create_libraries_table_md(libraries_table, libraries)
@@ -665,7 +635,7 @@ def main():
 
     descriptions = []
 
-    with open(filename_in, encoding="utf-8") as f_in:
+    with open(file_in, encoding="utf-8") as f_in:
         last_app__name="    "
         app__name="    "
         for line in f_in:
@@ -735,9 +705,9 @@ def main():
 
     print("\n\n\n")
 
-    tables = change_file_extension(filename_in, "html")
+    tables = change_file_extension(file_in, "html")
 
-    with open(filename_in, 'r', encoding="utf-8") as fin:
+    with open(file_in, 'r', encoding="utf-8") as fin:
         with open(tables, 'w', encoding="utf-8") as fout:
             for line in fin:
                 t_title = False
@@ -813,6 +783,9 @@ def main():
 
             fout.write( nl+table_body_end )
             fout.write( table_end +nl+nl)
+
+
+            log_file.close()
 
 if __name__ == "__main__":
     main()
