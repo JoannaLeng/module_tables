@@ -3,6 +3,8 @@
 """
 Created on Mon Oct  2 16:35:03 2017
 
+Copyright (c) Joanna Leng in 2017.
+
 This is a script that runs on a Linux system that uses modules to allow
 users to access software and creates a table in mark down that can be
 copied and pasted into a word press webpage.

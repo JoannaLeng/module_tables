@@ -6,7 +6,7 @@ File for python pip install.
 
 ---------------------------------------
 
-  Copyright (c) Joanna Leng in 2018.
+  Copyright (c) Joanna Leng in 2017.
 
   Module_table is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
