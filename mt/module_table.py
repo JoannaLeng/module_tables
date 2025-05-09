@@ -22,7 +22,7 @@ import sys
 import argparse
 import validators
 
-def create_category_table_html(path_out, catergory_software_list, category_name, log_file):
+def create_software_category_table_html(path_out, catergory_software_list, category_name, log_file):
     """
     create a text file with a html table of the software in the catergory_software_list.
     Inputs:
@@ -77,8 +77,8 @@ def create_category_table_html(path_out, catergory_software_list, category_name,
 
     tables = change_file_extension_add_date(path_out, "html")
 
-    print(f"\n\nCreating table file for {category_name} in {tables}\n")
-    log_file.write(f"\n\nCreating table file for {category_name} in {tables}\n")
+    print(f"\n\nCreating html table file for {category_name} in {tables}\n")
+    log_file.write(f"\n\nCreating html table file for {category_name} in {tables}\n")
 
     with open(tables, 'w', encoding="utf-8") as fout:
         fout.write(table_start)
@@ -132,34 +132,46 @@ def create_category_table_html(path_out, catergory_software_list, category_name,
 
 
 
-def create_libraries_table_md(libraries_table, libraries):
+def create_software_category_table_md(path_file_out, software_list, category_name, log_file):
     """
     create a text file with a mark down table of the libraries.
     Inputs:
-        libraries_table          The path and filename as a string
-        libraries                The list of libraries as a list of dictionaries
+        software_list            List of software as a list of dictionaries
+        path_file_out            The path and filename as a string
     Outputs:
         None
     """
     now = time.strftime("%c")
+    category_name = category_name.replace(category_name[0], category_name[0].upper(), 1)
     caption_text = (
                     f"**Libary Modules on Aire Table:** " \
-                    f"This table of libraries was automatically created {now}."
+                    f"This table of {category_name} was automatically created {now}."
     )
 
+    tables = change_file_extension_add_date(path_file_out, "md")
 
-    with open(libraries_table, 'w', encoding="utf-8") as f_out:
-        f_out.write("| **Title** | **Version** | **Summary** | **License** | **URL** | **Path** |\n")
-        f_out.write("|:--------:|:-----------:|:-----------:|:-----------:|:-------:|:--------:|\n")
-        for item in libraries:
-            f_out.write(
-                f"| {item['title']} "
-                f"| {item['version']} "
-                f"| {item['summary']} "
-                f"| {item['license']} "
-                f"| {item['URL']} "
-                f"| {item['path']} |\n"
-            )
+    print(f"\n\nCreating md table file for {category_name} in {tables}\n")
+    log_file.write(f"\n\nCreating md table file for {category_name} in {tables}\n")
+
+
+    with open(tables, 'w', encoding="utf-8") as f_out:
+        f_out.write("| **Title** | **Version** | **Summary** |"
+                    " **License** | **URL** | **Path** |\n")
+        f_out.write("|:--------:|:-----------:|:-----------:|"
+                    ":-----------:|:-------:|:--------:|\n")
+        for item in software_list:
+            f_out.write(f"| {item['title']} ")
+            f_out.write(    f"| {item['version']} ")
+            f_out.write(    f"| {item['summary']} ")
+            f_out.write(    f"| {item['license']} ")
+            if validators.url(item['URL']):
+                f_out.write(f"| [{item['URL']}]({item['URL']})")
+            else:
+                f_out.write(f"|  {item['URL']} ")
+                log_file.write(f"WARNING: the software with title: {item['title']}"
+                               f" the URL: {item['URL']} is not a valid URL\n")
+            #f_out.write(f"| {url_string} ")
+            f_out.write(    f"| {item['path']} |\n")
         f_out.write(caption_text)
 
 
@@ -316,6 +328,37 @@ def change_file_extension(file_path, new_extension):
     #os.rename(file_path, new_file_path)
     return new_file_path
 
+def format_2_controller(software_list, file_in, file_out, category_name, log_file):
+    """
+    This function controls the format 2 optoion which is to create a
+    md table for each category of software.
+    Inputs:
+        software_list       The list of software items as a list of dictionaries
+        file_in             The input file as a string
+        file_out            The output file as a string
+        category_name       The name of the category as a string
+    Outputs:
+        None
+    """
+
+    print("\n\n"+category_name.upper()+"\n")
+
+    if len(software_list) > 0:
+        print(f"len(software_list): {len(software_list)}\n")
+        software_list_out = file_out+r"_"+category_name
+        for index, item in enumerate(software_list):
+            print(f"{index} {item} \n")
+        #print(f"\nsoftware_list_out: {software_list_out}")
+        create_software_category_table_md(software_list_out,
+                                            software_list,
+                                            category_name,
+                                            log_file)
+    elif len(software_list) == 0:
+        print(f"len(software_list): {len(software_list)}")
+        print(f"No {category_name} found in {file_in}\n")
+
+    return None
+
 def format_1_controller(software_list, file_in, file_out, category_name, log_file):
     """
     This function controls the format 1 optoion which is to create a
@@ -335,9 +378,12 @@ def format_1_controller(software_list, file_in, file_out, category_name, log_fil
         print(f"len(software_list): {len(software_list)}\n")
         software_list_out = file_out+r"_"+category_name
         for index, item in enumerate(software_list):
-           print(f"{index} {item} \n")
+            print(f"{index} {item} \n")
         #print(f"\nsoftware_list_out: {software_list_out}")
-        create_category_table_html(software_list_out, software_list, category_name, log_file)
+        create_software_category_table_html(software_list_out,
+                                            software_list,
+                                            category_name,
+                                            log_file)
     elif len(software_list) == 0:
         print(f"len(software_list): {len(software_list)}")
         print(f"No {category_name} found in {file_in}\n")
@@ -457,7 +503,8 @@ def main():
     # File handling admin - setting paths, names etc.
     # =============================================================================
 
-    log_file_filename = (os.path.abspath(path_out)+r"/modules_table_log-"+time.strftime("%Y-%m-%d")+r"log.txt")
+    log_file_filename = (os.path.abspath(path_out)+
+                         r"/modules_table_log-"+time.strftime("%Y-%m-%d")+r".txt")
 
     log_file = open(log_file_filename, 'w', encoding="utf-8")
     start_log_file(log_file)
@@ -619,17 +666,16 @@ def main():
         format_1_controller(tools, file_in, file_out, "tools", log_file)
         format_1_controller(interpreters, file_in, file_out, "interpreters", log_file)
         format_1_controller(applications, file_in, file_out, "applications", log_file)
-
     elif format == 2:
         print("format 2")
-        create_libraries_table_md(libraries_table, libraries)
+        format_2_controller(libraries, file_in, file_out, "libraries", log_file)
+        format_2_controller(tools, file_in, file_out, "tools", log_file)
+        format_2_controller(interpreters, file_in, file_out, "interpreters", log_file)
+        format_2_controller(applications, file_in, file_out, "applications", log_file)
     elif format == 3:
         print("format 3")
         print("format 3 is being created\n.")
 
-    #create_libraries_table_md(libraries_table, libraries)
-
-    #create_libraries_table_html(libraries_table1, libraries)
 
 
 
