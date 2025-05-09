@@ -3,4 +3,5 @@
 *egg*
 /bak
 /urls
+*pycache*
 .spyproject/
