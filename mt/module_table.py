@@ -174,6 +174,149 @@ def create_software_category_table_md(path_file_out, software_list, category_nam
             f_out.write(    f"| {item['path']} |\n")
         f_out.write(caption_text)
 
+def create_individual_software_tables_for_all_html(path_out, file_in, descriptions, log_file):
+    """
+    create a text file with a html table of the software in the catergory_software_list.
+    Inputs:
+        path_out                 The path and filename as a string
+        file_in                  The input file as a string
+        descriptions             The list of input info in a from the input files (not in a software item d)
+                                 as a list of dictionaries
+        category_name            The name of the category as a string
+        log_file                 The log file as a file object
+    Outputs:
+        None
+    """
+
+    print(f"\n\nCreating html file with a table for each software item in {category_name}"
+          " in {path_out}\n")
+    log_file.write(f"\n\nCreating html file with a table for each software item in {category_name}"
+                   " in {path_out}\n")
+
+    # =============================================================================
+    # Creates an html table which is written into individual files for each category.
+    # =============================================================================
+
+
+    table_start = """<table class=\"table table-striped\"
+                    bgcolor=\"#E6E6FA\"
+                    style=\"border:1px solid black;
+                    border-collapse:collapse;\">\n"""
+    table_end = "</table>\n"
+    table_header_start = " <thead>\n"
+    table_header_end = " </thead>\n"
+    table_body_start = " <tbody>\n"
+    table_body_end = " </tbody>\n"
+
+    row_start = "<tr>"
+    row_end = "</tr>"
+    header_cell_start = "<th style=\"border:1px solid black\">"
+    header_cell_end = "</th>"
+    body_cell_start = "<td style=\"border:1px solid black\">"
+    body_cell_end = "</td>"
+
+    caption_start = "<caption>"
+    caption_end = "</caption>"
+
+    now = time.strftime("%c")
+
+    sp = ' '
+    nl = '\n'
+
+    last_app = ""
+
+
+    app=""
+    last_app=""
+
+    r=0
+    descrip=""
+    category=""
+
+    print("\n\n\n")
+
+    tables = change_file_extension(path_out, "html")
+
+    with open(file_in, 'r', encoding="utf-8") as fin:
+        with open(tables, 'w', encoding="utf-8") as fout:
+            for line in fin:
+                t_title = False
+                t_body = False
+                t_end = False
+                n=line.count('/')
+
+                if n > 1:
+                    category = re.sub(':$', '', (line.split('/'))[n].strip())
+                    app = ""
+                    t_title = True
+                    if r != 0:
+                        t_end = True
+
+                if n == 0:
+                    app = line.strip()
+                    for d in descriptions:
+                        if app == d[0]:
+                            descrip = d[1]
+                            break
+
+                    version = ""
+                    t_body = True
+                if n == 1:
+                    app = (line.split('/'))[0].strip()
+                    for d in descriptions:
+                        if app == d[0]:
+                            descrip = d[1]
+                            break
+
+                    ###################################################
+                    ## When we add urls for link to documentation may #
+                    ## want to re-implement this                     ##
+                    ###################################################
+                    #for a in app_urls:
+                    #    if app == a[0]:
+                    #        app = a[1]
+                    #        break
+
+                    version = (line.split('/'))[1].strip()
+                    t_body = True
+                if category != "architecture":
+                    if t_end:
+                        fout.write(nl+table_body_end)
+                        fout.write(table_end +nl+nl)
+                        t_end = False
+                    if t_title:
+                        fout.write("<h2>"+category.title()+"</h2>"+nl+nl)
+                        fout.write(nl+table_start)
+                        fout.write(nl+caption_start+"This table of "+category+
+                                " was automatically created "+now+caption_end)
+                        fout.write(nl+table_header_start)
+                        fout.write(sp+sp+row_start + header_cell_start + "Module" + header_cell_end)
+                        fout.write(nl+sp+sp+ header_cell_start + "Version(s)" + header_cell_end)
+                        fout.write(nl+sp+sp+ header_cell_start + "Description" + header_cell_end)
+                        fout.write(nl+sp+sp+row_end+table_header_end+nl+table_body_start+nl)
+                        t_title = False
+                    if t_body:
+                        if last_app != app:
+                            fout.write(sp+sp+row_start + header_cell_start + app + header_cell_end)
+                        else:
+                            fout.write(sp+sp+row_start + header_cell_start + "" + header_cell_end)
+                        fout.write(nl+sp+sp+body_cell_start + version + body_cell_end)
+                        if last_app != app:
+                            fout.write(nl+sp+sp+body_cell_start + descrip + body_cell_end)
+                        else:
+                            fout.write(nl+sp+sp+body_cell_start + "" + body_cell_end)
+                        fout.write(nl+sp+sp+row_end+nl)
+                        t_body = False
+                    r=r+1
+                    last_app=app
+
+
+            fout.write( nl+table_body_end )
+            fout.write( table_end +nl+nl)
+
+    return None
+
+
 
 def check_item_at_item_end(software_item, log_file):
     """
@@ -554,7 +697,11 @@ def main():
     index = 0
 
 
-
+    # =============================================================================
+    # Read the input file and create a list of software items in software dictionary
+    # for each category. This is for format 1 and 2.
+    # The input file is a text file created by the command "module whatis"
+    # =============================================================================
     with open(file_in, encoding="utf-8") as f_in:
         next_item = software_item.copy()
         last_item = software_item.copy()
@@ -659,28 +806,12 @@ def main():
                                                             log_file)
         f_in.close()
 
-
-    if format == 1:
-        print("format 1")
-        format_1_controller(libraries, file_in, file_out, "libraries", log_file)
-        format_1_controller(tools, file_in, file_out, "tools", log_file)
-        format_1_controller(interpreters, file_in, file_out, "interpreters", log_file)
-        format_1_controller(applications, file_in, file_out, "applications", log_file)
-    elif format == 2:
-        print("format 2")
-        format_2_controller(libraries, file_in, file_out, "libraries", log_file)
-        format_2_controller(tools, file_in, file_out, "tools", log_file)
-        format_2_controller(interpreters, file_in, file_out, "interpreters", log_file)
-        format_2_controller(applications, file_in, file_out, "applications", log_file)
-    elif format == 3:
-        print("format 3")
-        print("format 3 is being created\n.")
-
-
-
-
-
-
+    # =============================================================================
+    # Read the input file and create a list of all software items not just those in
+    # the software dictionary. Instead it collects all information in the descriptions
+    # list. This is for format 3.
+    # The input file is a text file created by the command "module whatis"
+    # =============================================================================
     descriptions = []
 
     with open(file_in, encoding="utf-8") as f_in:
@@ -707,133 +838,49 @@ def main():
                     descriptions.append(arr)
             last_app__name = app__name
     f_in.close()
-
-    print(len(descriptions))
+    print(f"len(descriptions)): {len(descriptions)}\n")
+    #print(f"descriptions: {descriptions}\n")
 
 
     # =============================================================================
-    # Creates an html table which is written into individual files for each category.
+    # Now we have collected the information from the input file we can create the
+    # tables in the format required.
+    # The format is set by the user at the command line.
     # =============================================================================
 
-
-    table_start = """<table class=\"table table-striped\"
-                    bgcolor=\"#E6E6FA\"
-                    style=\"border:1px solid black;
-                    border-collapse:collapse;\">\n"""
-    table_end = "</table>\n"
-    table_header_start = " <thead>\n"
-    table_header_end = " </thead>\n"
-    table_body_start = " <tbody>\n"
-    table_body_end = " </tbody>\n"
-
-    row_start = "<tr>"
-    row_end = "</tr>"
-    header_cell_start = "<th style=\"border:1px solid black\">"
-    header_cell_end = "</th>"
-    body_cell_start = "<td style=\"border:1px solid black\">"
-    body_cell_end = "</td>"
-
-    caption_start = "<caption>"
-    caption_end = "</caption>"
-
-    now = time.strftime("%c")
-
-    sp = ' '
-    nl = '\n'
-
-    last_app = ""
+    if format == 1:
+        print("format 1")
+        format_1_controller(libraries, file_in, file_out, "libraries", log_file)
+        format_1_controller(tools, file_in, file_out, "tools", log_file)
+        format_1_controller(interpreters, file_in, file_out, "interpreters", log_file)
+        format_1_controller(applications, file_in, file_out, "applications", log_file)
+    elif format == 2:
+        print("format 2")
+        format_2_controller(libraries, file_in, file_out, "libraries", log_file)
+        format_2_controller(tools, file_in, file_out, "tools", log_file)
+        format_2_controller(interpreters, file_in, file_out, "interpreters", log_file)
+        format_2_controller(applications, file_in, file_out, "applications", log_file)
+    elif format == 3:
+        print("format 3")
+        create_individual_software_tables_for_all_html(path_out,
+                                                       file_in,
+                                                       descriptions,
+                                                       log_file)
 
 
-    app=""
-    last_app=""
-
-    r=0
-    descrip=""
-    category=""
-
-    print("\n\n\n")
-
-    tables = change_file_extension(file_in, "html")
-
-    with open(file_in, 'r', encoding="utf-8") as fin:
-        with open(tables, 'w', encoding="utf-8") as fout:
-            for line in fin:
-                t_title = False
-                t_body = False
-                t_end = False
-                n=line.count('/')
-
-                if n > 1:
-                    category = re.sub(':$', '', (line.split('/'))[n].strip())
-                    app = ""
-                    t_title = True
-                    if r != 0:
-                        t_end = True
-
-                if n == 0:
-                    app = line.strip()
-                    for d in descriptions:
-                        if app == d[0]:
-                            descrip = d[1]
-                            break
-
-                    version = ""
-                    t_body = True
-                if n == 1:
-                    app = (line.split('/'))[0].strip()
-                    for d in descriptions:
-                        if app == d[0]:
-                            descrip = d[1]
-                            break
-
-                    ###################################################
-                    ## When we add urls for link to documentation may #
-                    ## want to re-implement this                     ##
-                    ###################################################
-                    #for a in app_urls:
-                    #    if app == a[0]:
-                    #        app = a[1]
-                    #        break
-
-                    version = (line.split('/'))[1].strip()
-                    t_body = True
-                if category != "architecture":
-                    if t_end:
-                        fout.write(nl+table_body_end)
-                        fout.write(table_end +nl+nl)
-                        t_end = False
-                    if t_title:
-                        fout.write("<h2>"+category.title()+"</h2>"+nl+nl)
-                        fout.write(nl+table_start)
-                        fout.write(nl+caption_start+"This table of "+category+
-                                " was automatically created "+now+caption_end)
-                        fout.write(nl+table_header_start)
-                        fout.write(sp+sp+row_start + header_cell_start + "Module" + header_cell_end)
-                        fout.write(nl+sp+sp+ header_cell_start + "Version(s)" + header_cell_end)
-                        fout.write(nl+sp+sp+ header_cell_start + "Description" + header_cell_end)
-                        fout.write(nl+sp+sp+row_end+table_header_end+nl+table_body_start+nl)
-                        t_title = False
-                    if t_body:
-                        if last_app != app:
-                            fout.write(sp+sp+row_start + header_cell_start + app + header_cell_end)
-                        else:
-                            fout.write(sp+sp+row_start + header_cell_start + "" + header_cell_end)
-                        fout.write(nl+sp+sp+body_cell_start + version + body_cell_end)
-                        if last_app != app:
-                            fout.write(nl+sp+sp+body_cell_start + descrip + body_cell_end)
-                        else:
-                            fout.write(nl+sp+sp+body_cell_start + "" + body_cell_end)
-                        fout.write(nl+sp+sp+row_end+nl)
-                        t_body = False
-                    r=r+1
-                    last_app=app
 
 
-            fout.write( nl+table_body_end )
-            fout.write( table_end +nl+nl)
 
 
-            log_file.close()
+
+
+
+
+
+
+
+
+    log_file.close()
 
 if __name__ == "__main__":
     main()
